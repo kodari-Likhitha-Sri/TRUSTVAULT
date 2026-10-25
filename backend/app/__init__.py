@@ -56,68 +56,68 @@ def init_db_schema(app):
                 with db.engine.connect() as conn:
                     # 1. users table schema update
                     cols = {row[1] for row in conn.execute(text("PRAGMA table_info(users)")).fetchall()}
-                if cols:
-                    if 'department' not in cols:
-                        conn.execute(text("ALTER TABLE users ADD COLUMN department VARCHAR(100) DEFAULT 'General'"))
-                    if 'status' not in cols:
-                        conn.execute(text("ALTER TABLE users ADD COLUMN status VARCHAR(20) DEFAULT 'Active'"))
-                    if 'last_login' not in cols:
-                        conn.execute(text("ALTER TABLE users ADD COLUMN last_login DATETIME"))
-                    if 'updated_at' not in cols:
-                        conn.execute(text("ALTER TABLE users ADD COLUMN updated_at DATETIME"))
+                    if cols:
+                        if 'department' not in cols:
+                            conn.execute(text("ALTER TABLE users ADD COLUMN department VARCHAR(100) DEFAULT 'General'"))
+                        if 'status' not in cols:
+                            conn.execute(text("ALTER TABLE users ADD COLUMN status VARCHAR(20) DEFAULT 'Active'"))
+                        if 'last_login' not in cols:
+                            conn.execute(text("ALTER TABLE users ADD COLUMN last_login DATETIME"))
+                        if 'updated_at' not in cols:
+                            conn.execute(text("ALTER TABLE users ADD COLUMN updated_at DATETIME"))
 
-                    # Ensure username index allows duplicate usernames while email index enforces uniqueness
-                    conn.execute(text("DROP INDEX IF EXISTS ix_users_username"))
-                    conn.execute(text("CREATE INDEX IF NOT EXISTS ix_users_username ON users (username)"))
-                    conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_email ON users (email)"))
+                        # Ensure username index allows duplicate usernames while email index enforces uniqueness
+                        conn.execute(text("DROP INDEX IF EXISTS ix_users_username"))
+                        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_users_username ON users (username)"))
+                        conn.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_email ON users (email)"))
 
-                # 2. documents table schema update
-                cols = {row[1] for row in conn.execute(text("PRAGMA table_info(documents)")).fetchall()}
-                if cols:
-                    if 'filepath' not in cols:
-                        conn.execute(text("ALTER TABLE documents ADD COLUMN filepath VARCHAR(255)"))
-                    if 'size' not in cols:
-                        conn.execute(text("ALTER TABLE documents ADD COLUMN size INTEGER DEFAULT 0"))
-                    if 'version' not in cols:
-                        conn.execute(text("ALTER TABLE documents ADD COLUMN version INTEGER DEFAULT 1"))
-                    if 'status' not in cols:
-                        conn.execute(text("ALTER TABLE documents ADD COLUMN status VARCHAR(20) DEFAULT 'Active'"))
-                    if 'deleted_by' not in cols:
-                        conn.execute(text("ALTER TABLE documents ADD COLUMN deleted_by INTEGER"))
-                    if 'deleted_at' not in cols:
-                        conn.execute(text("ALTER TABLE documents ADD COLUMN deleted_at DATETIME"))
-                    if 'created_at' not in cols:
-                        conn.execute(text("ALTER TABLE documents ADD COLUMN created_at DATETIME"))
-                    if 'updated_at' not in cols:
-                        conn.execute(text("ALTER TABLE documents ADD COLUMN updated_at DATETIME"))
+                    # 2. documents table schema update
+                    cols = {row[1] for row in conn.execute(text("PRAGMA table_info(documents)")).fetchall()}
+                    if cols:
+                        if 'filepath' not in cols:
+                            conn.execute(text("ALTER TABLE documents ADD COLUMN filepath VARCHAR(255)"))
+                        if 'size' not in cols:
+                            conn.execute(text("ALTER TABLE documents ADD COLUMN size INTEGER DEFAULT 0"))
+                        if 'version' not in cols:
+                            conn.execute(text("ALTER TABLE documents ADD COLUMN version INTEGER DEFAULT 1"))
+                        if 'status' not in cols:
+                            conn.execute(text("ALTER TABLE documents ADD COLUMN status VARCHAR(20) DEFAULT 'Active'"))
+                        if 'deleted_by' not in cols:
+                            conn.execute(text("ALTER TABLE documents ADD COLUMN deleted_by INTEGER"))
+                        if 'deleted_at' not in cols:
+                            conn.execute(text("ALTER TABLE documents ADD COLUMN deleted_at DATETIME"))
+                        if 'created_at' not in cols:
+                            conn.execute(text("ALTER TABLE documents ADD COLUMN created_at DATETIME"))
+                        if 'updated_at' not in cols:
+                            conn.execute(text("ALTER TABLE documents ADD COLUMN updated_at DATETIME"))
 
-                # 3. permissions table schema update
-                cols = {row[1] for row in conn.execute(text("PRAGMA table_info(permissions)")).fetchall()}
-                if cols:
-                    if 'granted_by' not in cols:
-                        conn.execute(text("ALTER TABLE permissions ADD COLUMN granted_by INTEGER"))
-                    if 'expires_at' not in cols:
-                        conn.execute(text("ALTER TABLE permissions ADD COLUMN expires_at DATETIME"))
+                    # 3. permissions table schema update
+                    cols = {row[1] for row in conn.execute(text("PRAGMA table_info(permissions)")).fetchall()}
+                    if cols:
+                        if 'granted_by' not in cols:
+                            conn.execute(text("ALTER TABLE permissions ADD COLUMN granted_by INTEGER"))
+                        if 'expires_at' not in cols:
+                            conn.execute(text("ALTER TABLE permissions ADD COLUMN expires_at DATETIME"))
 
-                # 4. activity_logs table schema update
-                cols = {row[1] for row in conn.execute(text("PRAGMA table_info(activity_logs)")).fetchall()}
-                if cols:
-                    if 'document_id' not in cols:
-                        conn.execute(text("ALTER TABLE activity_logs ADD COLUMN document_id INTEGER"))
-                    if 'old_value' not in cols:
-                        conn.execute(text("ALTER TABLE activity_logs ADD COLUMN old_value TEXT"))
-                    if 'new_value' not in cols:
-                        conn.execute(text("ALTER TABLE activity_logs ADD COLUMN new_value TEXT"))
-                    if 'device' not in cols:
-                        conn.execute(text("ALTER TABLE activity_logs ADD COLUMN device VARCHAR(50)"))
-                    if 'browser' not in cols:
-                        conn.execute(text("ALTER TABLE activity_logs ADD COLUMN browser VARCHAR(50)"))
-                    if 'created_at' not in cols:
-                        conn.execute(text("ALTER TABLE activity_logs ADD COLUMN created_at DATETIME"))
+                    # 4. activity_logs table schema update
+                    cols = {row[1] for row in conn.execute(text("PRAGMA table_info(activity_logs)")).fetchall()}
+                    if cols:
+                        if 'document_id' not in cols:
+                            conn.execute(text("ALTER TABLE activity_logs ADD COLUMN document_id INTEGER"))
+                        if 'old_value' not in cols:
+                            conn.execute(text("ALTER TABLE activity_logs ADD COLUMN old_value TEXT"))
+                        if 'new_value' not in cols:
+                            conn.execute(text("ALTER TABLE activity_logs ADD COLUMN new_value TEXT"))
+                        if 'device' not in cols:
+                            conn.execute(text("ALTER TABLE activity_logs ADD COLUMN device VARCHAR(50)"))
+                        if 'browser' not in cols:
+                            conn.execute(text("ALTER TABLE activity_logs ADD COLUMN browser VARCHAR(50)"))
+                        if 'created_at' not in cols:
+                            conn.execute(text("ALTER TABLE activity_logs ADD COLUMN created_at DATETIME"))
 
-                conn.commit()
-        except Exception:
-            pass
+                    conn.commit()
+            except Exception:
+                pass
 
 def create_app(config_class=Config):
     templates_dir = getattr(config_class, 'TEMPLATES_FOLDER', None)
