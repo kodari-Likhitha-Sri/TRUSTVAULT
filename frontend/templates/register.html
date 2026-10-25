@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% set hide_nav = True %}
+{% set hide_footer = True %}
+
+{% block title %}Create Account - TrustVault{% endblock %}
+
+{% block content %}
+<div class="auth-split-wrapper">
+    <!-- Left Hero Image Column -->
+    <div class="auth-split-left d-none d-lg-flex">
+        <!-- Brand Logo Header -->
+        <a href="{{ url_for('main.index') }}" class="d-flex align-items-center gap-2 text-white text-decoration-none">
+            <div class="sidebar-brand-icon bg-white text-primary">
+                <i class="bi bi-shield-lock-fill"></i>
+            </div>
+            <span class="fs-4 fw-bold tracking-tight text-white">TrustVault</span>
+        </a>
+
+        <!-- Middle Hero Messaging -->
+        <div class="py-5">
+            <h2 class="display-6 fw-bold text-white mb-3" style="line-height: 1.2;">
+                Join TrustVault's<br>
+                Secure Workspace
+            </h2>
+            <p class="text-white-50 fs-6 mb-0" style="max-width: 440px; line-height: 1.6;">
+                Get enterprise-grade encryption, role-based access control, and complete transparency for all your sensitive files.
+            </p>
+        </div>
+
+        <!-- Bottom Security Note -->
+        <div class="text-white-50 small">
+            <i class="bi bi-shield-check me-2"></i>Automated Tamper-Evident Audit Logging
+        </div>
+    </div>
+
+    <!-- Right Register Form Column -->
+    <div class="auth-split-right">
+        <!-- Form Header -->
+        <div class="mb-4">
+            <h2 class="fs-3 fw-bold text-dark mb-1">Create an Account</h2>
+            <p class="text-muted small">Start managing and sharing documents with confidence</p>
+        </div>
+
+        <form method="POST" action="{{ url_for('main.register') }}">
+            {{ form.hidden_tag() }}
+
+            <!-- Username -->
+            <div class="mb-3">
+                <label class="saas-label" for="username">Username *</label>
+                {{ form.username(class="saas-input" + (" is-invalid" if form.username.errors else ""), placeholder="e.g. alex_rivera", id="username", autofocus=true) }}
+                {% for error in form.username.errors %}
+                    <div class="text-danger small mt-1">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <!-- Email Address -->
+            <div class="mb-3">
+                <label class="saas-label" for="email">Work Email *</label>
+                {{ form.email(class="saas-input" + (" is-invalid" if form.email.errors else ""), placeholder="alex@company.com", id="email") }}
+                {% for error in form.email.errors %}
+                    <div class="text-danger small mt-1">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <!-- Account Role Selection -->
+            <div class="mb-3">
+                <label class="saas-label" for="role">Requested Role *</label>
+                {{ form.role(class="saas-select" + (" is-invalid" if form.role.errors else ""), id="role") }}
+                {% for error in form.role.errors %}
+                    <div class="text-danger small mt-1">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <!-- Password -->
+            <div class="mb-3">
+                <label class="saas-label" for="password">Password *</label>
+                {{ form.password(class="saas-input" + (" is-invalid" if form.password.errors else ""), placeholder="Min 8 characters with numbers & symbols", id="password") }}
+                {% for error in form.password.errors %}
+                    <div class="text-danger small mt-1">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <!-- Confirm Password -->
+            <div class="mb-4">
+                <label class="saas-label" for="confirm_password">Confirm Password *</label>
+                {{ form.confirm_password(class="saas-input" + (" is-invalid" if form.confirm_password.errors else ""), placeholder="Repeat your password", id="confirm_password") }}
+                {% for error in form.confirm_password.errors %}
+                    <div class="text-danger small mt-1">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" class="btn-primary-blue w-100 justify-content-center py-2 mb-3 fs-6">
+                Create Account
+            </button>
+
+            <!-- Bottom Link -->
+            <div class="text-center mt-3">
+                <span class="text-muted small">Already have an account? </span>
+                <a href="{{ url_for('main.login') }}" class="small text-primary fw-semibold text-decoration-none">
+                    Sign In
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}Categories - TrustVault{% endblock %}
+{% block page_title %}Categories{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+    <div>
+        <h2 class="fs-4 fw-bold text-dark mb-1">Document Categories</h2>
+        <p class="text-muted small mb-0">Organize and discover documents grouped by domain classification.</p>
+    </div>
+    {% if current_user.is_admin or current_user.is_owner %}
+    <div>
+        <a href="{{ url_for('main.upload') }}" class="btn-primary-blue text-decoration-none">
+            <i class="bi bi-cloud-arrow-up"></i> Upload Document
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Category Grid Cards -->
+<div class="row g-3 mb-4">
+    {% set cat_icons = {
+        'Personal': ('bi-person-badge', 'hr', 'Personal records, identity documents, and private credentials.'),
+        'Academic': ('bi-mortarboard', 'design', 'Curriculum, academic transcripts, courses, and certifications.'),
+        'Finance': ('bi-cash-coin', 'finance', 'Audits, balance sheets, and quarterly financial reports.'),
+        'Legal': ('bi-file-earmark-ruled', 'legal', 'Contracts, NDAs, commercial agreements, and policies.'),
+        'Work': ('bi-briefcase', 'work', 'Projects, corporate reports, workplace presentations, and tasks.'),
+        'HR': ('bi-people', 'hr', 'Employee records, handbooks, and onboarding guides.'),
+        'Medical': ('bi-heart-pulse', 'product', 'Clinical documentation, HIPAA guides, and health data.'),
+        'Research': ('bi-lightbulb', 'design', 'Whitepapers, technical diagrams, and architectures.'),
+        'Education': ('bi-book', 'engineering', 'Training courses, presentations, and tutorials.'),
+        'Other': ('bi-folder', 'default', 'Miscellaneous archives, unclassified documents, and general items.')
+    } %}
+
+    {% for stat in category_stats %}
+    {% set icon, cat_class, desc = cat_icons.get(stat.name, ('bi-folder', 'default', 'General documents')) %}
+    <div class="col-md-4 col-sm-6">
+        <a href="{{ url_for('main.categories', category_name=stat.name) }}" class="text-decoration-none">
+            <div class="saas-card h-100 p-4 transition hover-shadow {% if selected_category == stat.name %}border-primary border-2{% endif %}">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <span class="file-badge-icon {{ cat_class }}" style="width: 40px; height: 40px; font-size: 18px;">
+                        <i class="bi {{ icon }}"></i>
+                    </span>
+                    <span class="pill-cat {{ cat_class }}">{{ stat.count }} Files</span>
+                </div>
+                <h4 class="fs-6 fw-bold text-dark mb-1">{{ stat.name }}</h4>
+                <p class="text-muted small mb-0">{{ desc }}</p>
+            </div>
+        </a>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Category Documents Section -->
+{% if selected_category %}
+<div class="saas-card p-0 overflow-hidden mb-4">
+    <div class="saas-card-header p-4 border-bottom mb-0">
+        <div class="d-flex align-items-center gap-2">
+            <span class="pill-cat {{ selected_category|lower }} fs-6">{{ selected_category }}</span>
+            <h4 class="saas-card-title mb-0">Documents in {{ selected_category }}</h4>
+        </div>
+        <a href="{{ url_for('main.categories') }}" class="btn-secondary-white py-1 px-3 small">
+            View All Categories
+        </a>
+    </div>
+
+    {% if selected_docs %}
+    <div class="table-responsive">
+        <table class="saas-table mb-0">
+            <thead>
+                <tr>
+                    <th style="padding-left: 20px;">Name</th>
+                    <th>Owner</th>
+                    <th>Size</th>
+                    <th>Updated</th>
+                    <th class="text-end" style="padding-right: 20px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for doc in selected_docs %}
+                <tr>
+                    <td style="padding-left: 20px;">
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="file-badge-icon {{ doc.file_type|lower }}">
+                                <i class="bi {{ doc.icon_class }}"></i>
+                            </span>
+                            <div>
+                                <a href="{{ url_for('main.document_detail', doc_id=doc.id) }}" class="fw-semibold text-dark text-decoration-none">
+                                    {{ doc.title }}
+                                </a>
+                                <div class="text-muted small" style="font-size: 11px;">{{ doc.original_filename }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="text-dark small">{{ doc.owner.username if doc.owner else 'Unknown' }}</span>
+                    </td>
+                    <td class="text-muted font-monospace small">{{ doc.human_size }}</td>
+                    <td class="text-muted small">{{ doc.upload_date.strftime('%b %d, %Y') if doc.upload_date else 'Recently' }}</td>
+                    <td class="text-end" style="padding-right: 20px;">
+                        <a href="{{ url_for('main.document_detail', doc_id=doc.id) }}" class="btn-secondary-white py-1 px-3 small text-decoration-none">
+                            View
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5 text-muted small">
+        No documents currently categorized under <strong>{{ selected_category }}</strong>.
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

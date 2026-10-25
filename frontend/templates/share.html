@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block title %}Document Permissions - TrustVault{% endblock %}
+{% block page_title %}Document Permissions{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-9 col-xl-8">
+        <!-- Header matching Mockup -->
+        <div class="mb-4">
+            <h2 class="fs-4 fw-bold text-dark mb-1">Document Permissions</h2>
+            <p class="text-muted small mb-0">Manage who can access this document.</p>
+        </div>
+
+        <!-- 1. Document Preview Header Card matching Mockup -->
+        {% if doc %}
+        <div class="saas-card p-3 mb-4">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                <div class="d-flex align-items-center gap-3">
+                    <span class="file-badge-icon {{ doc.file_type|lower }}" style="width: 44px; height: 44px; font-size: 20px;">
+                        <i class="bi {{ doc.icon_class }}"></i>
+                    </span>
+                    <div>
+                        <h4 class="fs-6 fw-bold text-dark mb-0">{{ doc.title }}</h4>
+                        <div class="text-muted small mt-1">
+                            {{ doc.human_size }} &bull; Updated {{ doc.upload_date.strftime('%b %d, %Y') if doc.upload_date else 'Recently' }}
+                        </div>
+                        <div class="text-muted small" style="font-size: 11px;">
+                            Owner: <span class="text-dark fw-medium">{{ doc.owner.username if doc.owner else 'Owner' }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <a href="{{ url_for('main.document_detail', doc_id=doc.id) }}" class="btn-secondary-white py-1 px-3 small text-decoration-none">
+                        View Document
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- 2. Tabs: Permissions & Share Link matching Mockup -->
+        <div class="saas-card p-0 overflow-hidden">
+            <div class="border-bottom px-4 pt-3 d-flex align-items-center justify-content-between">
+                <ul class="nav nav-tabs border-0" id="permTabs" role="tablist">
+                    <li class="nav-item">
+                        <button class="nav-link active fw-semibold text-primary border-0 border-bottom border-primary border-2 px-3 py-2 bg-transparent" id="perms-tab" data-bs-toggle="tab" data-bs-target="#permsPane" type="button">
+                            Permissions
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link text-muted border-0 px-3 py-2 bg-transparent" id="share-link-tab" data-bs-toggle="tab" data-bs-target="#linkPane" type="button">
+                            Share Link
+                        </button>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="tab-content p-4" id="permTabContent">
+                <!-- Tab 1: Permissions List -->
+                <div class="tab-pane fade show active" id="permsPane">
+                    <div class="d-flex align-items-center justify-content-between mb-4">
+                        <h4 class="fs-6 fw-bold text-dark mb-0">
+                            Users with Access ({{ (active_shares|length + 1) if doc else active_shares|length }})
+                        </h4>
+                        <button type="button" class="btn-primary-blue py-1 px-3 small" data-bs-toggle="collapse" data-bs-target="#addUserCollapse">
+                            <i class="bi bi-plus"></i> Add User
+                        </button>
+                    </div>
+
+                    <!-- Collapsible Add User Form -->
+                    <div class="collapse mb-4" id="addUserCollapse">
+                        <div class="p-3 bg-light rounded-3 border">
+                            <h5 class="fs-6 fw-bold mb-3 text-dark">Grant Access to Colleague</h5>
+                            <form method="POST" action="{{ url_for('main.share_document', doc_id=doc.id if doc else None) }}">
+                                {{ form.hidden_tag() }}
+                                {% if doc %}
+                                    <input type="hidden" name="document_id" value="{{ doc.id }}">
+                                {% else %}
+                                    <div class="mb-3">
+                                        <label class="saas-label">Document</label>
+                                        <select name="document_id" class="saas-select" required>
+                                            {% for d in available_docs %}
+                                            <option value="{{ d.id }}">{{ d.title }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                {% endif %}
+
+                                <div class="row g-2 mb-3">
+                                    <div class="col-md-7">
+                                        <label class="saas-label">Select User *</label>
+                                        {{ form.user_id(class="saas-select") }}
+                                    </div>
+                                    <div class="col-md-5">
+                                        <label class="saas-label">Access Level *</label>
+                                        {{ form.permission(class="saas-select") }}
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    <button type="submit" class="btn-primary-blue">
+                                        Grant Permission
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- User Access Rows matching Mockup -->
+                    <div class="d-flex flex-column gap-3">
+                        <!-- Owner Row -->
+                        {% if doc and doc.owner %}
+                        <div class="d-flex align-items-center justify-content-between p-2 rounded-2 hover-bg">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="activity-avatar bg-primary-subtle text-primary">
+                                    {{ doc.owner.username[:1]|upper }}
+                                </div>
+                                <div>
+                                    <div class="fw-semibold text-dark small">{{ doc.owner.username }}</div>
+                                    <div class="text-muted small" style="font-size: 11px;">Owner</div>
+                                </div>
+                            </div>
+                            <div>
+                                <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 small">
+                                    Full Access
+                                </span>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Shared Users Rows -->
+                        {% if active_shares %}
+                            {% for perm in active_shares %}
+                            <div class="d-flex align-items-center justify-content-between p-2 rounded-2 hover-bg border-top">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="activity-avatar bg-info-subtle text-info">
+                                        {{ perm.user.username[:1]|upper if perm.user else 'U' }}
+                                    </div>
+                                    <div>
+                                        <div class="fw-semibold text-dark small">{{ perm.user.username if perm.user else 'User' }}</div>
+                                        <div class="text-muted small" style="font-size: 11px;">{{ perm.user.email if perm.user else '' }}</div>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    {% if perm.permission == 'edit' %}
+                                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1 small">
+                                        Can Edit
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1 small">
+                                        Read Only
+                                    </span>
+                                    {% endif %}
+
+                                    {% if current_user.can_edit_document(doc if doc else perm.document) %}
+                                    <a href="{{ url_for('main.revoke_permission', perm_id=perm.id) }}" 
+                                       class="btn btn-sm btn-outline-danger border-0" 
+                                       title="Revoke Permission"
+                                       onclick="return confirm('Revoke access for this user?');">
+                                        <i class="bi bi-x-lg"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-center py-4 text-muted small border-top">
+                                No external users have been granted access yet. Click <strong>+ Add User</strong> above to share.
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Tab 2: Share Link -->
+                <div class="tab-pane fade" id="linkPane">
+                    <div class="p-3">
+                        <label class="saas-label">Internal Secure Link</label>
+                        <div class="input-group mb-3">
+                            <input type="text" class="saas-input" id="shareLinkInput" value="http://127.0.0.1:5000/documents/{{ doc.id if doc else '1' }}" readonly>
+                            <button class="btn-primary-blue" type="button" onclick="navigator.clipboard.writeText(document.getElementById('shareLinkInput').value); alert('Link copied to clipboard!');">
+                                <i class="bi bi-copy"></i> Copy
+                            </button>
+                        </div>
+                        <p class="text-muted small">Anyone with this link and proper account permissions can access this document.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

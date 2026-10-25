@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block title %}Search Documents - TrustVault{% endblock %}
+{% block page_title %}Search Documents{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-9 col-xl-8">
+        <!-- Header matching Mockup -->
+        <div class="mb-4">
+            <h2 class="fs-4 fw-bold text-dark mb-1">Search Documents</h2>
+            <p class="text-muted small mb-0">Find documents across your organization.</p>
+        </div>
+
+        <!-- Search Input Bar matching Mockup -->
+        <div class="saas-card p-3 mb-4">
+            <form action="{{ url_for('main.search') }}" method="GET" id="searchForm">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 text-muted">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input type="text" name="q" class="saas-input border-start-0 ps-0" 
+                           placeholder="Search by title, owner, keyword, or filename..." 
+                           value="{{ query_text }}">
+                    <button class="btn-primary-blue" type="submit">
+                        Search
+                    </button>
+                </div>
+
+                <!-- Advanced Filters Section matching Mockup -->
+                <div class="mt-3 pt-3 border-top">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+                        <span class="small fw-semibold text-muted">Advanced Filters</span>
+                        <a href="{{ url_for('main.search') }}" class="small text-primary text-decoration-none">Clear All</a>
+                    </div>
+
+                    <div class="d-flex align-items-center flex-wrap gap-2">
+                        <!-- Type Filter -->
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                Document Type: <strong class="text-dark">{{ selected_type|upper if selected_type else 'All' }}</strong>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{{ url_for('main.search', q=query_text, category=selected_category) }}">All Types</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('main.search', q=query_text, type='pdf', category=selected_category) }}">PDF</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('main.search', q=query_text, type='docx', category=selected_category) }}">DOCX</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('main.search', q=query_text, type='pptx', category=selected_category) }}">PPTX</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('main.search', q=query_text, type='image', category=selected_category) }}">Image</a></li>
+                            </ul>
+                        </div>
+
+                        <!-- Category Filter -->
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                Category: <strong class="text-dark">{{ selected_category if selected_category else 'All Categories' }}</strong>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{{ url_for('main.search', q=query_text, type=selected_type) }}">All Categories</a></li>
+                                {% for cat in categories %}
+                                <li><a class="dropdown-item" href="{{ url_for('main.search', q=query_text, category=cat, type=selected_type) }}">{{ cat }}</a></li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+
+                        <!-- Date Range & Date Uploaded -->
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                Date Range: <strong class="text-dark">Last 6 months</strong>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#">Any time</a></li>
+                                <li><a class="dropdown-item" href="#">Last 30 days</a></li>
+                                <li><a class="dropdown-item" href="#">Last 6 months</a></li>
+                                <li><a class="dropdown-item" href="#">Last year</a></li>
+                            </ul>
+                        </div>
+
+                        <!-- Date Uploaded Field -->
+                        <div class="d-inline-flex align-items-center gap-1 ms-auto">
+                            <label class="small text-muted mb-0 me-1" for="upload_date">Date Uploaded:</label>
+                            <input type="date" name="upload_date" id="upload_date" class="form-control form-control-sm w-auto" 
+                                   value="{{ selected_date }}" onchange="document.getElementById('searchForm').submit();">
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Search Results Count matching Mockup -->
+        <div class="mb-3 d-flex align-items-center justify-content-between">
+            <h4 class="fs-6 fw-bold text-dark mb-0">Search Results ({{ results|length }})</h4>
+        </div>
+
+        <!-- Results List matching Mockup Cards -->
+        {% if results %}
+        <div class="saas-card p-0 overflow-hidden">
+            <div class="d-flex flex-column">
+                {% for doc in results %}
+                <div class="d-flex align-items-center justify-content-between p-3 border-bottom hover-bg">
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="file-badge-icon {{ doc.file_type|lower }}">
+                            <i class="bi {{ doc.icon_class }}"></i>
+                        </span>
+                        <div>
+                            <h5 class="fs-6 fw-bold mb-1">
+                                <a href="{{ url_for('main.document_detail', doc_id=doc.id) }}" class="text-dark text-decoration-none">
+                                    {{ doc.title }}
+                                </a>
+                            </h5>
+                            <div class="text-muted small" style="font-size: 12px;">
+                                {{ doc.owner.username if doc.owner else 'Unknown' }} &bull;
+                                <span class="pill-cat {{ doc.category|lower }} py-0 px-2" style="font-size: 11px;">{{ doc.category }}</span> &bull;
+                                <span class="font-monospace">{{ doc.human_size }}</span> &bull;
+                                {{ doc.upload_date.strftime('%b %d, %Y') if doc.upload_date else 'Recently' }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-light border-0 text-muted" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-three-dots"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('main.document_detail', doc_id=doc.id) }}">
+                                    <i class="bi bi-eye me-2 text-primary"></i> View Detail
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('main.download_document', doc_id=doc.id) }}">
+                                    <i class="bi bi-download me-2 text-success"></i> Download
+                                </a>
+                            </li>
+                            {% if current_user.can_edit_document(doc) %}
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('main.share_document', doc_id=doc.id) }}">
+                                    <i class="bi bi-share me-2 text-info"></i> Share Permissions
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% else %}
+        <div class="saas-card text-center py-5">
+            <div class="display-6 text-muted mb-3 opacity-25">
+                <i class="bi bi-search"></i>
+            </div>
+            <h5 class="fw-semibold text-dark">No documents matched your query</h5>
+            <p class="text-muted small mb-0">Try searching with a broader keyword or resetting filters.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

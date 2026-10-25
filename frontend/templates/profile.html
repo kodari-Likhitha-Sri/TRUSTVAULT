@@ -1,0 +1,297 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - TrustVault{% endblock %}
+{% block page_title %}Settings{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Left Navigation Tabs matching Mockup -->
+    <div class="col-lg-3">
+        <div class="saas-card p-2">
+            <div class="nav flex-column nav-pills" id="settingsTab" role="tablist">
+                <button class="nav-link active text-start py-2 px-3 fw-medium d-flex align-items-center gap-2 mb-1" 
+                        id="profile-tab" data-bs-toggle="pill" data-bs-target="#profilePane" type="button" role="tab">
+                    <i class="bi bi-person"></i> Profile
+                </button>
+                <button class="nav-link text-start py-2 px-3 fw-medium d-flex align-items-center gap-2 mb-1" 
+                        id="security-tab" data-bs-toggle="pill" data-bs-target="#securityPane" type="button" role="tab">
+                    <i class="bi bi-shield-lock"></i> Security
+                </button>
+                <button class="nav-link text-start py-2 px-3 fw-medium d-flex align-items-center gap-2 mb-1" 
+                        id="notifications-tab" data-bs-toggle="pill" data-bs-target="#notificationsPane" type="button" role="tab">
+                    <i class="bi bi-bell"></i> Notifications
+                </button>
+                <button class="nav-link text-start py-2 px-3 fw-medium d-flex align-items-center gap-2" 
+                        id="preferences-tab" data-bs-toggle="pill" data-bs-target="#preferencesPane" type="button" role="tab">
+                    <i class="bi bi-sliders"></i> Preferences
+                </button>
+            </div>
+        </div>
+
+        <!-- Role Badge Card -->
+        <div class="saas-card p-3 text-center">
+            <span class="pill-role {{ current_user.role|lower }} mb-2">
+                {{ current_user.role }} Account
+            </span>
+            <div class="text-muted small">
+                Storage: <strong class="text-dark">{{ current_user.get_storage_formatted() }}</strong>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Settings Content Panes matching Mockup -->
+    <div class="col-lg-9">
+        <div class="tab-content" id="settingsTabContent">
+            <!-- 1. Profile Settings Pane matching Mockup Row 5 Left -->
+            <div class="tab-pane fade show active" id="profilePane" role="tabpanel">
+                <div class="mb-4">
+                    <h2 class="fs-4 fw-bold text-dark mb-1">Profile Settings</h2>
+                    <p class="text-muted small mb-0">Manage your account settings and preferences.</p>
+                </div>
+
+                <div class="saas-card">
+                    <h4 class="saas-card-title mb-4">Personal Information</h4>
+
+                    <form method="POST" enctype="multipart/form-data" action="{{ url_for('main.profile') }}">
+                        {{ form.hidden_tag() }}
+
+                        <!-- Avatar Row matching Mockup -->
+                        <div class="d-flex align-items-center gap-4 mb-4 pb-3 border-bottom">
+                            <div class="activity-avatar" style="width: 64px; height: 64px; font-size: 24px;">
+                                {% if current_user.profile_pic %}
+                                    <img src="{{ url_for('static', filename='images/avatars/' + current_user.profile_pic) }}" alt="{{ current_user.username }}">
+                                {% else %}
+                                    {{ current_user.username[:2]|upper }}
+                                {% endif %}
+                            </div>
+                            <div>
+                                <label for="profilePicInput" class="btn-primary-blue py-1 px-3 small cursor-pointer">
+                                    Change Photo
+                                </label>
+                                <input type="file" name="profile_pic" id="profilePicInput" class="d-none" onchange="this.form.submit();">
+                                <div class="text-muted small mt-1" style="font-size: 11px;">JPG, PNG or GIF. Max size 2MB</div>
+                            </div>
+                        </div>
+
+                        <!-- Name & Email Grid matching Mockup -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="saas-label" for="username">Full Name</label>
+                                {{ form.username(class="saas-input" + (" is-invalid" if form.username.errors else ""), id="username") }}
+                                {% for error in form.username.errors %}
+                                    <div class="text-danger small mt-1">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="saas-label" for="email">Email Address</label>
+                                {{ form.email(class="saas-input" + (" is-invalid" if form.email.errors else ""), id="email") }}
+                                {% for error in form.email.errors %}
+                                    <div class="text-danger small mt-1">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Job Title & Department Grid matching Mockup -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="saas-label" for="jobTitle">Job Title</label>
+                                <input type="text" id="jobTitle" class="saas-input" value="{% if current_user.is_admin %}System Administrator{% elif current_user.is_owner %}Human Resources Manager{% else %}Security Analyst{% endif %}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="saas-label" for="department">Department</label>
+                                <input type="text" id="department" class="saas-input" value="{{ current_user.department if current_user.department else 'Operations' }}">
+                            </div>
+                        </div>
+
+                        <div class="text-end pt-3 border-top">
+                            <button type="submit" class="btn-primary-blue">
+                                Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 2. Security Settings Pane matching Mockup Row 5 Center -->
+            <div class="tab-pane fade" id="securityPane" role="tabpanel">
+                <div class="mb-4">
+                    <h2 class="fs-4 fw-bold text-dark mb-1">Security Settings</h2>
+                    <p class="text-muted small mb-0">Manage your password and security preferences.</p>
+                </div>
+
+                <div class="saas-card">
+                    <h4 class="saas-card-title mb-4">Change Password</h4>
+
+                    <form method="POST" action="{{ url_for('main.change_password') }}">
+                        {{ password_form.hidden_tag() }}
+
+                        <div class="mb-3">
+                            <label class="saas-label" for="current_password">Current Password</label>
+                            <div class="position-relative">
+                                {{ password_form.current_password(class="saas-input pe-5" + (" is-invalid" if password_form.current_password.errors else ""), placeholder="Enter password", id="current_password") }}
+                                <button type="button" class="btn position-absolute top-50 end-0 translate-middle-y text-muted border-0 bg-transparent pe-3" onclick="togglePass('current_password')">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                            {% for error in password_form.current_password.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="saas-label" for="new_password">New Password</label>
+                            <div class="position-relative">
+                                {{ password_form.new_password(class="saas-input pe-5" + (" is-invalid" if password_form.new_password.errors else ""), placeholder="Enter password", id="new_password") }}
+                                <button type="button" class="btn position-absolute top-50 end-0 translate-middle-y text-muted border-0 bg-transparent pe-3" onclick="togglePass('new_password')">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                            {% for error in password_form.new_password.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="saas-label" for="confirm_new_password">Confirm New Password</label>
+                            <div class="position-relative">
+                                {{ password_form.confirm_new_password(class="saas-input pe-5" + (" is-invalid" if password_form.confirm_new_password.errors else ""), placeholder="Enter password", id="confirm_new_password") }}
+                                <button type="button" class="btn position-absolute top-50 end-0 translate-middle-y text-muted border-0 bg-transparent pe-3" onclick="togglePass('confirm_new_password')">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                            {% for error in password_form.confirm_new_password.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="text-end pt-3 border-top">
+                            <button type="submit" class="btn-primary-blue">
+                                Update Password
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 3. Notification Preferences Pane matching Mockup Row 5 Right -->
+            <div class="tab-pane fade" id="notificationsPane" role="tabpanel">
+                <div class="mb-4">
+                    <h2 class="fs-4 fw-bold text-dark mb-1">Notification Preferences</h2>
+                    <p class="text-muted small mb-0">Choose what you want to be notified about.</p>
+                </div>
+
+                <div class="saas-card">
+                    <!-- Toggle 1: Document Access -->
+                    <div class="d-flex align-items-center justify-content-between py-3 border-bottom">
+                        <div>
+                            <div class="fw-semibold text-dark">Document Access</div>
+                            <div class="text-muted small">Notify when someone accesses your documents</div>
+                        </div>
+                        <label class="switch-box">
+                            <input type="checkbox" checked>
+                            <span class="slider-round"></span>
+                        </label>
+                    </div>
+
+                    <!-- Toggle 2: Permission Changes -->
+                    <div class="d-flex align-items-center justify-content-between py-3 border-bottom">
+                        <div>
+                            <div class="fw-semibold text-dark">Permission Changes</div>
+                            <div class="text-muted small">Notify when permissions are changed</div>
+                        </div>
+                        <label class="switch-box">
+                            <input type="checkbox" checked>
+                            <span class="slider-round"></span>
+                        </label>
+                    </div>
+
+                    <!-- Toggle 3: Document Updates -->
+                    <div class="d-flex align-items-center justify-content-between py-3 border-bottom">
+                        <div>
+                            <div class="fw-semibold text-dark">Document Updates</div>
+                            <div class="text-muted small">Notify when documents are updated</div>
+                        </div>
+                        <label class="switch-box">
+                            <input type="checkbox" checked>
+                            <span class="slider-round"></span>
+                        </label>
+                    </div>
+
+                    <!-- Toggle 4: Security Alerts -->
+                    <div class="d-flex align-items-center justify-content-between py-3 border-bottom">
+                        <div>
+                            <div class="fw-semibold text-dark">Security Alerts</div>
+                            <div class="text-muted small">Notify about failed access attempts</div>
+                        </div>
+                        <label class="switch-box">
+                            <input type="checkbox" checked>
+                            <span class="slider-round"></span>
+                        </label>
+                    </div>
+
+                    <!-- Toggle 5: Weekly Summary -->
+                    <div class="d-flex align-items-center justify-content-between py-3 mb-4">
+                        <div>
+                            <div class="fw-semibold text-dark">Weekly Summary</div>
+                            <div class="text-muted small">Receive weekly activity summary</div>
+                        </div>
+                        <label class="switch-box">
+                            <input type="checkbox">
+                            <span class="slider-round"></span>
+                        </label>
+                    </div>
+
+                    <div class="text-end pt-3 border-top">
+                        <button type="button" class="btn-primary-blue" onclick="alert('Notification preferences saved successfully!');">
+                            Save Preferences
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. Preferences Pane -->
+            <div class="tab-pane fade" id="preferencesPane" role="tabpanel">
+                <div class="mb-4">
+                    <h2 class="fs-4 fw-bold text-dark mb-1">System Preferences</h2>
+                    <p class="text-muted small mb-0">Customize your workspace display and behavior.</p>
+                </div>
+
+                <div class="saas-card">
+                    <div class="mb-3">
+                        <label class="saas-label">Interface Theme</label>
+                        <select class="saas-select" style="max-width: 320px;">
+                            <option value="light" selected>TrustVault Light SaaS (Default)</option>
+                            <option value="system">Match System</option>
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label class="saas-label">Timezone</label>
+                        <select class="saas-select" style="max-width: 320px;">
+                            <option value="UTC" selected>UTC (Coordinated Universal Time)</option>
+                            <option value="EST">EST (Eastern Standard Time)</option>
+                            <option value="PST">PST (Pacific Standard Time)</option>
+                            <option value="IST">IST (India Standard Time)</option>
+                        </select>
+                    </div>
+                    <div class="text-end pt-3 border-top">
+                        <button type="button" class="btn-primary-blue" onclick="alert('Preferences saved!');">
+                            Save Preferences
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function togglePass(inputId) {
+    const el = document.getElementById(inputId);
+    if (el) {
+        el.type = el.type === 'password' ? 'text' : 'password';
+    }
+}
+</script>
+{% endblock %}

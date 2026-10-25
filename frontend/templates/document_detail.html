@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+
+{% block title %}{{ doc.title }} - TrustVault{% endblock %}
+{% block page_title %}{{ doc.title }}{% endblock %}
+
+{% block content %}
+<!-- Top Bar matching Mockup (Back button + Title + Download button) -->
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+    <div class="d-flex align-items-center gap-3">
+        <a href="{{ url_for('main.documents') }}" class="btn-secondary-white py-1 px-3" title="Back to documents">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <div>
+            <h2 class="fs-4 fw-bold text-dark mb-0">{{ doc.original_filename if doc.original_filename else doc.title }}</h2>
+            <div class="text-muted small mt-1">
+                {{ doc.category }} &bull; {{ doc.human_size }} &bull; Updated {{ doc.upload_date.strftime('%b %d, %Y') if doc.upload_date else 'Recently' }}
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex align-items-center gap-2">
+        {% if can_share %}
+        <a href="{{ url_for('main.share_document', doc_id=doc.id) }}" class="btn-secondary-white py-2 px-3 small text-decoration-none">
+            <i class="bi bi-share me-1"></i> Permissions
+        </a>
+        {% endif %}
+        {% if can_edit %}
+        <a href="{{ url_for('main.edit_document', doc_id=doc.id) }}" class="btn-secondary-white py-2 px-3 small text-decoration-none">
+            <i class="bi bi-pencil me-1"></i> Edit
+        </a>
+        {% endif %}
+        <a href="{{ url_for('main.download_document', doc_id=doc.id) }}" class="btn-primary-blue py-2 px-4 small text-decoration-none">
+            <i class="bi bi-download me-1"></i> Download
+        </a>
+    </div>
+</div>
+
+<!-- Document Viewer Shell matching Mockup -->
+<div class="viewer-shell mb-4">
+    <!-- Viewer Toolbar matching Mockup -->
+    <div class="viewer-toolbar">
+        <div class="d-flex align-items-center gap-2">
+            <button class="btn btn-sm btn-dark text-light border-0" title="Previous Page" onclick="prevDocPage()"><i class="bi bi-chevron-left"></i></button>
+            <span class="small font-monospace px-2" id="docPageCounter">1 / 5</span>
+            <button class="btn btn-sm btn-dark text-light border-0" title="Next Page" onclick="nextDocPage()"><i class="bi bi-chevron-right"></i></button>
+        </div>
+
+        <div class="d-flex align-items-center gap-3">
+            <button class="btn btn-sm btn-dark text-light border-0" title="Zoom Out" onclick="zoomDoc(-10)"><i class="bi bi-dash"></i></button>
+            <span class="small font-monospace" id="docZoomLevel">100%</span>
+            <button class="btn btn-sm btn-dark text-light border-0" title="Zoom In" onclick="zoomDoc(10)"><i class="bi bi-plus"></i></button>
+            <button class="btn btn-sm btn-dark text-light border-0 ms-2" title="Rotate" onclick="rotateDoc()"><i class="bi bi-arrow-clockwise"></i></button>
+            <button class="btn btn-sm btn-dark text-light border-0" title="Fullscreen" onclick="toggleFullscreen()"><i class="bi bi-arrows-fullscreen"></i></button>
+        </div>
+    </div>
+
+    <!-- Viewer Body (Thumbnails + Main Document Canvas) -->
+    <div class="viewer-body">
+        <!-- Left Thumbnail Strip matching Mockup -->
+        <div class="viewer-thumbnails d-none d-md-flex">
+            <div class="viewer-thumb active" onclick="setDocPage(1)">
+                <div class="bg-white border rounded p-1 mb-1 shadow-sm" style="height: 60px;">
+                    <div style="font-size: 6px; line-height: 1.2; color: #64748b; overflow: hidden; height: 100%;">
+                        <strong>EMPLOYMENT CONTRACT</strong><br>
+                        This contract is entered into on March 1, 2024 between Company and Employee...
+                    </div>
+                </div>
+                <span class="text-white-50 small" style="font-size: 11px;">1</span>
+            </div>
+
+            <div class="viewer-thumb" onclick="setDocPage(2)">
+                <div class="bg-white border rounded p-1 mb-1 shadow-sm" style="height: 60px;">
+                    <div style="font-size: 6px; line-height: 1.2; color: #64748b; overflow: hidden; height: 100%;">
+                        <strong>2. Compensation &amp; Benefits</strong><br>
+                        The employee shall receive base salary, medical coverage, 401(k)...
+                    </div>
+                </div>
+                <span class="text-white-50 small" style="font-size: 11px;">2</span>
+            </div>
+
+            <div class="viewer-thumb" onclick="setDocPage(3)">
+                <div class="bg-white border rounded p-1 mb-1 shadow-sm" style="height: 60px;">
+                    <div style="font-size: 6px; line-height: 1.2; color: #64748b; overflow: hidden; height: 100%;">
+                        <strong>3. Confidentiality</strong><br>
+                        Employee agrees to maintain highest degree of confidentiality...
+                    </div>
+                </div>
+                <span class="text-white-50 small" style="font-size: 11px;">3</span>
+            </div>
+        </div>
+
+        <!-- Center Document Canvas matching Mockup -->
+        <div class="viewer-canvas" id="viewerCanvas">
+            {% if doc.file_type == 'pdf' %}
+            <div class="w-100 h-100" style="min-height: 650px;">
+                <iframe src="{{ url_for('static', filename=doc.file_path) }}" class="w-100 h-100 border-0 rounded bg-white" title="{{ doc.title }}"></iframe>
+            </div>
+            {% elif doc.file_type in ['png', 'jpg', 'jpeg', 'webp'] %}
+            <div class="text-center p-3">
+                <img src="{{ url_for('static', filename=doc.file_path) }}" alt="{{ doc.title }}" class="img-fluid rounded shadow-lg" style="max-height: 600px; object-fit: contain;">
+            </div>
+            {% else %}
+            <!-- Styled Document Canvas matching Mockup Screenshot -->
+            <div class="bg-white text-dark rounded shadow-lg p-5" id="mockDocPage" style="width: 100%; max-width: 680px; min-height: 750px; font-family: 'Plus Jakarta Sans', serif;">
+                <div class="text-center mb-5 pb-3 border-bottom">
+                    <h3 class="fw-bold tracking-tight mb-2 text-dark" style="letter-spacing: -0.02em;">EMPLOYMENT CONTRACT</h3>
+                    <div class="text-muted small">Reference: TV-2024-DOC-{{ doc.id }} &bull; TrustVault Secure Enterprise</div>
+                </div>
+
+                <p class="text-secondary small mb-4" style="line-height: 1.8;">
+                    This Employment Contract ("Contract") is entered into on <strong>March 1, 2024</strong>, between <strong>TrustVault Technologies Ltd.</strong> ("Company") and the Employee.
+                </p>
+
+                <h5 class="fw-bold text-dark mb-2 fs-6">1. Position and Duties</h5>
+                <p class="text-secondary small mb-4" style="line-height: 1.8;">
+                    The Company hereby employs the Employee as a Software Engineer. The Employee agrees to perform such duties as are reasonably assigned by the Company with the highest professional integrity and compliance with TrustVault document security standards.
+                </p>
+
+                <h5 class="fw-bold text-dark mb-2 fs-6">2. Term of Employment</h5>
+                <p class="text-secondary small mb-4" style="line-height: 1.8;">
+                    The term of employment shall commence immediately upon verification and continues indefinitely unless terminated in accordance with the Company's policy and role-based access control guidelines.
+                </p>
+
+                <h5 class="fw-bold text-dark mb-2 fs-6">3. Confidentiality and Non-Disclosure</h5>
+                <p class="text-secondary small mb-4" style="line-height: 1.8;">
+                    The Employee acknowledges that all proprietary files, client contracts, and documents secured inside TrustVault are trade secrets protected by tamper-evident audit trails.
+                </p>
+
+                <div class="pt-4 border-top mt-5 d-flex justify-content-between text-muted small">
+                    <div>Page 1 of 5</div>
+                    <div>Confidential &bull; TrustVault Document Vault</div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Document Metadata & Collaborators Cards -->
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="saas-card h-100">
+            <h4 class="saas-card-title mb-3">File Information</h4>
+            <div class="d-flex flex-column gap-2 small">
+                <div class="d-flex justify-content-between py-2 border-bottom">
+                    <span class="text-muted">Filename</span>
+                    <span class="fw-medium text-dark">{{ doc.original_filename }}</span>
+                </div>
+                <div class="d-flex justify-content-between py-2 border-bottom">
+                    <span class="text-muted">Category</span>
+                    <span class="pill-cat {{ doc.category|lower }}">{{ doc.category }}</span>
+                </div>
+                <div class="d-flex justify-content-between py-2 border-bottom">
+                    <span class="text-muted">Size</span>
+                    <span class="font-monospace text-dark">{{ doc.human_size }}</span>
+                </div>
+                <div class="d-flex justify-content-between py-2 border-bottom">
+                    <span class="text-muted">Owner</span>
+                    <span class="text-dark">{{ doc.owner.username if doc.owner else 'Unknown' }}</span>
+                </div>
+                <div class="d-flex justify-content-between py-2">
+                    <span class="text-muted">Description</span>
+                    <span class="text-dark">{{ doc.description if doc.description else 'None provided' }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="saas-card h-100">
+            <div class="saas-card-header">
+                <h4 class="saas-card-title">Access Control</h4>
+                {% if can_share %}
+                <a href="{{ url_for('main.share_document', doc_id=doc.id) }}" class="small text-primary fw-semibold text-decoration-none">
+                    Manage &rarr;
+                </a>
+                {% endif %}
+            </div>
+            <div class="d-flex flex-column gap-2">
+                {% if doc.permissions %}
+                    {% for perm in doc.permissions %}
+                    <div class="d-flex align-items-center justify-content-between py-2 border-bottom">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="activity-avatar" style="width: 26px; height: 26px; font-size: 11px;">
+                                {{ perm.user.username[:1]|upper if perm.user else 'U' }}
+                            </span>
+                            <span class="small fw-medium text-dark">{{ perm.user.username if perm.user else 'User' }}</span>
+                        </div>
+                        <span class="badge {% if perm.permission == 'edit' %}bg-warning-subtle text-warning{% else %}bg-secondary-subtle text-secondary{% endif %}">
+                            {{ perm.permission|capitalize }}
+                        </span>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-muted small py-3">Only the owner has access to this document.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentPage = 1;
+let currentZoom = 100;
+
+function setDocPage(page) {
+    currentPage = page;
+    document.getElementById('docPageCounter').textContent = page + ' / 5';
+    document.querySelectorAll('.viewer-thumb').forEach((el, idx) => {
+        el.classList.toggle('active', idx + 1 === page);
+    });
+}
+
+function prevDocPage() {
+    if (currentPage > 1) setDocPage(currentPage - 1);
+}
+
+function nextDocPage() {
+    if (currentPage < 5) setDocPage(currentPage + 1);
+}
+
+function zoomDoc(delta) {
+    currentZoom = Math.max(50, Math.min(200, currentZoom + delta));
+    document.getElementById('docZoomLevel').textContent = currentZoom + '%';
+    const docPage = document.getElementById('mockDocPage');
+    if (docPage) {
+        docPage.style.transform = `scale(${currentZoom / 100})`;
+        docPage.style.transformOrigin = 'top center';
+    }
+}
+
+function rotateDoc() {
+    alert('Document orientation adjusted.');
+}
+
+function toggleFullscreen() {
+    const shell = document.querySelector('.viewer-shell');
+    if (!document.fullscreenElement) {
+        shell.requestFullscreen().catch(err => alert(err.message));
+    } else {
+        document.exitFullscreen();
+    }
+}
+</script>
+{% endblock %}

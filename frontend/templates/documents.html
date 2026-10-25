@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+
+{% block title %}Documents - TrustVault{% endblock %}
+{% block page_title %}Documents{% endblock %}
+
+{% block content %}
+<!-- Documents Header matching Mockup -->
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+    <div>
+        <h2 class="fs-4 fw-bold text-dark mb-1">Documents</h2>
+        <p class="text-muted small mb-0">Manage and organize your documents securely.</p>
+    </div>
+    {% if current_user.is_admin or current_user.is_owner %}
+    <div>
+        <a href="{{ url_for('main.upload') }}" class="btn-primary-blue text-decoration-none">
+            <i class="bi bi-plus-lg"></i> Upload Document
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Filter Bar matching Mockup -->
+<div class="saas-card p-3 mb-4">
+    <form action="{{ url_for('main.documents') }}" method="GET" id="docsFilterForm" class="row g-2 align-items-center">
+        <input type="hidden" name="view" value="{{ view_mode }}">
+        <input type="hidden" name="layout" id="layoutInput" value="{{ request.args.get('layout', 'table') }}">
+
+        <!-- Search Input -->
+        <div class="col-12 col-md-4">
+            <div class="position-relative">
+                <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+                <input type="text" name="q" value="{{ search_query }}" placeholder="Search documents..." 
+                       class="saas-input ps-5" onchange="document.getElementById('docsFilterForm').submit();">
+            </div>
+        </div>
+
+        <!-- Filter: All Types -->
+        <div class="col-6 col-md-2">
+            <select name="type" class="saas-select" onchange="document.getElementById('docsFilterForm').submit();">
+                <option value="">All Types</option>
+                <option value="pdf" {% if request.args.get('type') == 'pdf' %}selected{% endif %}>PDF</option>
+                <option value="docx" {% if request.args.get('type') == 'docx' %}selected{% endif %}>DOCX</option>
+                <option value="pptx" {% if request.args.get('type') == 'pptx' %}selected{% endif %}>PPTX</option>
+                <option value="image" {% if request.args.get('type') == 'image' %}selected{% endif %}>Images</option>
+            </select>
+        </div>
+
+        <!-- Filter: All Categories -->
+        <div class="col-6 col-md-2">
+            <select name="category" class="saas-select" onchange="document.getElementById('docsFilterForm').submit();">
+                <option value="">All Categories</option>
+                {% for cat in categories %}
+                <option value="{{ cat }}" {% if category_filter == cat %}selected{% endif %}>{{ cat }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Filter: All Owners -->
+        <div class="col-6 col-md-2">
+            <select name="view" class="saas-select" onchange="document.getElementById('docsFilterForm').submit();">
+                <option value="all" {% if view_mode == 'all' %}selected{% endif %}>All Owners</option>
+                <option value="my" {% if view_mode == 'my' %}selected{% endif %}>My Documents</option>
+                <option value="shared" {% if view_mode == 'shared' %}selected{% endif %}>Shared with me</option>
+                {% if trash_count > 0 %}
+                <option value="trash" {% if view_mode == 'trash' %}selected{% endif %}>Trash ({{ trash_count }})</option>
+                {% endif %}
+            </select>
+        </div>
+
+        <!-- Layout Toggle Buttons (Grid vs Table) -->
+        <div class="col-6 col-md-2 text-end">
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-sm {% if request.args.get('layout', 'table') == 'table' %}btn-primary{% else %}btn-outline-secondary{% endif %}" 
+                        onclick="document.getElementById('layoutInput').value='table'; document.getElementById('docsFilterForm').submit();" title="Table View">
+                    <i class="bi bi-list-ul"></i>
+                </button>
+                <button type="button" class="btn btn-sm {% if request.args.get('layout') == 'grid' %}btn-primary{% else %}btn-outline-secondary{% endif %}" 
+                        onclick="document.getElementById('layoutInput').value='grid'; document.getElementById('docsFilterForm').submit();" title="Grid View">
+                    <i class="bi bi-grid-fill"></i>
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Documents Display Table matching Mockup -->
+<div class="saas-card p-0 overflow-hidden">
+    {% if documents %}
+        {% if request.args.get('layout') == 'grid' %}
+            <!-- Grid View -->
+            <div class="row g-3 p-4">
+                {% for doc in documents %}
+                <div class="col-md-6 col-xl-4">
+                    <div class="border rounded-3 p-3 bg-white h-100 d-flex flex-column justify-content-between hover-shadow transition">
+                        <div>
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <span class="file-badge-icon {{ doc.file_type|lower }}">
+                                    <i class="bi {{ doc.icon_class }}"></i>
+                                </span>
+                                <span class="pill-cat {{ doc.category|lower }}">{{ doc.category }}</span>
+                            </div>
+                            <h4 class="fs-6 fw-bold mb-1">
+                                <a href="{{ url_for('main.document_detail', doc_id=doc.id) }}" class="text-dark text-decoration-none">
+                                    {{ doc.title }}
+                                </a>
+                            </h4>
+                            <div class="text-muted small mb-2">{{ doc.original_filename }}</div>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between pt-3 border-top mt-2 small text-muted">
+                            <div class="d-flex align-items-center gap-1">
+                                <span class="activity-avatar" style="width: 22px; height: 22px; font-size: 10px;">
+                                    {{ doc.owner.username[:1]|upper }}
+                                </span>
+                                <span>{{ doc.owner.username }}</span>
+                            </div>
+                            <span>{{ doc.human_size }}</span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <!-- Table View matching Mockup -->
+            <div class="table-responsive">
+                <table class="saas-table mb-0">
+                    <thead>
+                        <tr>
+                            <th style="padding-left: 20px;">Name</th>
+                            <th>Owner</th>
+                            <th>Category</th>
+                            <th>Size</th>
+                            <th>Updated</th>
+                            <th class="text-end" style="padding-right: 20px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for doc in documents %}
+                        <tr>
+                            <td style="padding-left: 20px;">
+                                <div class="d-flex align-items-center gap-3">
+                                    <span class="file-badge-icon {{ doc.file_type|lower }}">
+                                        <i class="bi {{ doc.icon_class }}"></i>
+                                    </span>
+                                    <div>
+                                        <a href="{{ url_for('main.document_detail', doc_id=doc.id) }}" class="fw-semibold text-dark text-decoration-none">
+                                            {{ doc.title }}
+                                        </a>
+                                        <div class="text-muted small" style="font-size: 11px;">{{ doc.original_filename }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="activity-avatar" style="width: 26px; height: 26px; font-size: 11px;">
+                                        {{ doc.owner.username[:1]|upper if doc.owner else 'U' }}
+                                    </span>
+                                    <span class="text-dark fw-medium small">{{ doc.owner.username if doc.owner else 'Unknown' }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="pill-cat {{ doc.category|lower }}">
+                                    {{ doc.category }}
+                                </span>
+                            </td>
+                            <td class="text-muted font-monospace small">{{ doc.human_size }}</td>
+                            <td class="text-muted small">
+                                {{ doc.upload_date.strftime('%b %d, %Y') if doc.upload_date else 'N/A' }}
+                            </td>
+                            <td class="text-end" style="padding-right: 20px;">
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-light border-0 text-muted" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="width: 32px; height: 32px; border-radius: 6px;">
+                                        <i class="bi bi-three-dots"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-light-subtle">
+                                        <li>
+                                            <a class="dropdown-item" href="{{ url_for('main.document_detail', doc_id=doc.id) }}">
+                                                <i class="bi bi-eye me-2 text-primary"></i> Preview &amp; Details
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="{{ url_for('main.download_document', doc_id=doc.id) }}">
+                                                <i class="bi bi-download me-2 text-success"></i> Download
+                                            </a>
+                                        </li>
+                                        {% if current_user.can_edit_document(doc) %}
+                                        <li>
+                                            <a class="dropdown-item" href="{{ url_for('main.share_document', doc_id=doc.id) }}">
+                                                <i class="bi bi-share me-2 text-info"></i> Manage Permissions
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="{{ url_for('main.edit_document', doc_id=doc.id) }}">
+                                                <i class="bi bi-pencil me-2 text-warning"></i> Edit Metadata
+                                            </a>
+                                        </li>
+                                        {% endif %}
+                                        {% if current_user.can_delete_document(doc) %}
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <a class="dropdown-item text-danger" href="{{ url_for('main.delete_document', doc_id=doc.id) }}" onclick="return confirm('Move this document to Trash?');">
+                                                <i class="bi bi-trash me-2"></i> Delete
+                                            </a>
+                                        </li>
+                                        {% endif %}
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    {% else %}
+        <div class="text-center py-5">
+            <div class="display-5 text-muted mb-3 opacity-25">
+                <i class="bi bi-folder2-open"></i>
+            </div>
+            <h5 class="fw-semibold text-dark">No documents found</h5>
+            <p class="text-muted small mb-3">Try adjusting your search criteria or upload a new file.</p>
+            {% if current_user.is_admin or current_user.is_owner %}
+            <a href="{{ url_for('main.upload') }}" class="btn-primary-blue text-decoration-none">
+                <i class="bi bi-cloud-arrow-up"></i> Upload Document
+            </a>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

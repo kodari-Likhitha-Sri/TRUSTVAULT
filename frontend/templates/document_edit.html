@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Edit {{ doc.title }} - TrustVault{% endblock %}
+{% block page_title %}Edit Document{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <div>
+                <h2 class="fs-4 fw-bold text-dark mb-1">Edit Document</h2>
+                <p class="text-muted small mb-0">Update metadata and classification tags for this document.</p>
+            </div>
+            <a href="{{ url_for('main.document_detail', doc_id=doc.id) }}" class="btn-secondary-white py-1 px-3 small text-decoration-none">
+                <i class="bi bi-arrow-left"></i> Back to Document
+            </a>
+        </div>
+
+        <div class="saas-card p-3 mb-4">
+            <div class="d-flex align-items-center gap-3">
+                <span class="file-badge-icon {{ doc.file_type|lower }}" style="width: 44px; height: 44px; font-size: 20px;">
+                    <i class="bi {{ doc.icon_class }}"></i>
+                </span>
+                <div>
+                    <h5 class="fs-6 fw-bold text-dark mb-0">{{ doc.original_filename }}</h5>
+                    <div class="text-muted small">
+                        Format: <span class="text-uppercase fw-semibold">{{ doc.file_type }}</span> &bull; 
+                        Size: {{ doc.human_size }} &bull; 
+                        Uploaded by {{ doc.owner.username }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="saas-card">
+            <form method="POST" action="{{ url_for('main.edit_document', doc_id=doc.id) }}">
+                {{ form.hidden_tag() }}
+
+                <div class="mb-3">
+                    <label class="saas-label" for="title">Document Title *</label>
+                    {{ form.title(class="saas-input" + (" is-invalid" if form.title.errors else "")) }}
+                    {% for error in form.title.errors %}
+                        <div class="text-danger small mt-1">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="mb-3">
+                    <label class="saas-label" for="category">Category *</label>
+                    {{ form.category(class="saas-select" + (" is-invalid" if form.category.errors else "")) }}
+                    {% for error in form.category.errors %}
+                        <div class="text-danger small mt-1">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="mb-4">
+                    <label class="saas-label" for="description">Description / Notes</label>
+                    {{ form.description(class="saas-textarea", rows="4") }}
+                    {% for error in form.description.errors %}
+                        <div class="text-danger small mt-1">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="d-flex justify-content-end gap-3 pt-3 border-top">
+                    <a href="{{ url_for('main.document_detail', doc_id=doc.id) }}" class="btn-secondary-white">Cancel</a>
+                    <button type="submit" class="btn-primary-blue">
+                        <i class="bi bi-check2-circle"></i> Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

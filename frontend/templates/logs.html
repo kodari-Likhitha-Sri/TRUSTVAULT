@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}Audit Logs - TrustVault{% endblock %}
+{% block page_title %}Audit Logs{% endblock %}
+
+{% block content %}
+<!-- Header matching Mockup -->
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+    <div>
+        <h2 class="fs-4 fw-bold text-dark mb-1">Audit Logs</h2>
+        <p class="text-muted small mb-0">Track all document activity and access events.</p>
+    </div>
+    <div>
+        <a href="{{ url_for('audit.export_logs') }}" class="btn-secondary-white text-decoration-none">
+            <i class="bi bi-download me-1"></i> Export CSV
+        </a>
+    </div>
+</div>
+
+<!-- Filters Row matching Mockup -->
+<div class="saas-card p-3 mb-4">
+    <form method="GET" action="{{ url_for('main.activity_logs') }}" class="row g-2 align-items-center" id="logsFilterForm">
+        <!-- Event Filter -->
+        <div class="col-6 col-md-3">
+            <select name="action" class="saas-select" onchange="document.getElementById('logsFilterForm').submit();">
+                <option value="">All Events</option>
+                <option value="UPLOAD" {% if selected_action == 'UPLOAD' %}selected{% endif %}>Uploaded</option>
+                <option value="DOWNLOAD" {% if selected_action == 'DOWNLOAD' %}selected{% endif %}>Downloaded</option>
+                <option value="EDIT" {% if selected_action == 'EDIT' %}selected{% endif %}>Edited</option>
+                <option value="SHARE" {% if selected_action == 'SHARE' %}selected{% endif %}>Shared</option>
+                <option value="VIEW" {% if selected_action == 'VIEW' %}selected{% endif %}>Viewed</option>
+                <option value="LOGIN" {% if selected_action == 'LOGIN' %}selected{% endif %}>Login</option>
+                <option value="DELETE" {% if selected_action == 'DELETE' %}selected{% endif %}>Deleted</option>
+            </select>
+        </div>
+
+        <!-- User Filter -->
+        <div class="col-6 col-md-3">
+            <select name="user_id" class="saas-select" onchange="document.getElementById('logsFilterForm').submit();">
+                <option value="">All Users</option>
+                {% for u in users %}
+                <option value="{{ u.id }}" {% if selected_user == u.id %}selected{% endif %}>{{ u.username }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Document Filter (Mock/All) -->
+        <div class="col-6 col-md-3">
+            <select class="saas-select">
+                <option value="">All Documents</option>
+            </select>
+        </div>
+
+        <!-- Date Range Filter -->
+        <div class="col-6 col-md-3">
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0 text-muted" style="border-color: var(--border-subtle);">
+                    <i class="bi bi-calendar3"></i>
+                </span>
+                <input type="text" class="saas-input border-start-0 ps-0" value="Mar 1, 2024 - Mar 30, 2024" readonly>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Logs Table matching Mockup -->
+<div class="saas-card p-0 overflow-hidden mb-4">
+    {% if logs %}
+    <div class="table-responsive">
+        <table class="saas-table mb-0">
+            <thead>
+                <tr>
+                    <th style="padding-left: 20px;">Date &amp; Time</th>
+                    <th>User</th>
+                    <th>Action</th>
+                    <th>Document</th>
+                    <th style="padding-right: 20px;">IP Address</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td style="padding-left: 20px;">
+                        <span class="text-dark small">
+                            {{ log.created_at.strftime('%b %d, %I:%M %p') if log.created_at else 'Just now' }}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="activity-avatar" style="width: 26px; height: 26px; font-size: 11px;">
+                                {{ log.user.username[:1]|upper if log.user else 'U' }}
+                            </span>
+                            <span class="text-dark fw-medium small">{{ log.user.username if log.user else 'System' }}</span>
+                        </div>
+                    </td>
+                    <td>
+                        {% set act = log.action|upper %}
+                        {% if 'UPLOAD' in act %}
+                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 small">
+                                <i class="bi bi-arrow-up-circle me-1"></i> Uploaded
+                            </span>
+                        {% elif 'DOWNLOAD' in act %}
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 small">
+                                <i class="bi bi-arrow-down-circle me-1"></i> Downloaded
+                            </span>
+                        {% elif 'EDIT' in act %}
+                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1 small">
+                                <i class="bi bi-pencil me-1"></i> Edited
+                            </span>
+                        {% elif 'SHARE' in act or 'PERMISSION' in act %}
+                            <span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-1 small">
+                                <i class="bi bi-share me-1"></i> Shared
+                            </span>
+                        {% elif 'DELETE' in act %}
+                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 small">
+                                <i class="bi bi-trash me-1"></i> Deleted
+                            </span>
+                        {% else %}
+                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1 small">
+                                <i class="bi bi-eye me-1"></i> {{ log.action|capitalize }}
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if log.document %}
+                            <a href="{{ url_for('main.document_detail', doc_id=log.document.id) }}" class="text-dark fw-medium small text-decoration-none">
+                                {{ log.document.title }}
+                            </a>
+                        {% else %}
+                            <span class="text-muted small">{{ log.details if log.details else 'Vault Activity' }}</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding-right: 20px;">
+                        <span class="font-monospace text-muted small">{{ log.ip_address if log.ip_address else '192.168.1.1' }}</span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination matching Mockup -->
+    <div class="d-flex align-items-center justify-content-end p-3 border-top">
+        <nav aria-label="Logs pagination">
+            <ul class="pagination pagination-sm mb-0">
+                <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                <li class="page-item"><a class="page-link" href="#">2</a></li>
+                <li class="page-item"><a class="page-link" href="#">3</a></li>
+                <li class="page-item"><a class="page-link" href="#">4</a></li>
+                <li class="page-item"><a class="page-link" href="#">&gt;</a></li>
+            </ul>
+        </nav>
+    </div>
+    {% else %}
+    <div class="text-center py-5 text-muted small">
+        <i class="bi bi-clock-history display-6 d-block mb-2 text-secondary opacity-50"></i>
+        No activity logs recorded yet.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
