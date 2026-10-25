@@ -51,10 +51,11 @@ def init_db_schema(app):
         db.create_all()
 
         from sqlalchemy import text
-        try:
-            with db.engine.connect() as conn:
-                # 1. users table schema update
-                cols = {row[1] for row in conn.execute(text("PRAGMA table_info(users)")).fetchall()}
+        if db.engine.dialect.name == 'sqlite':
+            try:
+                with db.engine.connect() as conn:
+                    # 1. users table schema update
+                    cols = {row[1] for row in conn.execute(text("PRAGMA table_info(users)")).fetchall()}
                 if cols:
                     if 'department' not in cols:
                         conn.execute(text("ALTER TABLE users ADD COLUMN department VARCHAR(100) DEFAULT 'General'"))

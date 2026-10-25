@@ -4,12 +4,17 @@ BACKEND_DIR = os.path.abspath(os.path.dirname(__file__))
 PROJECT_ROOT = os.path.abspath(os.path.join(BACKEND_DIR, '..'))
 FRONTEND_DIR = os.path.join(PROJECT_ROOT, 'frontend')
 
+# Supabase / PostgreSQL URL handling
+db_url = os.environ.get('DATABASE_URL')
+if db_url and db_url.startswith('postgres://'):
+    db_url = db_url.replace('postgres://', 'postgresql://', 1)
+
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'trustvault-super-secure-key-2026-xyz-987'
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or f"sqlite:///{os.path.join(BACKEND_DIR, 'trustvault.db')}"
+    SQLALCHEMY_DATABASE_URI = db_url or f"sqlite:///{os.path.join(BACKEND_DIR, 'trustvault.db')}"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
-    # 20 MB max file size (Phase 7)
+    # 20 MB max file size
     MAX_CONTENT_LENGTH = 20 * 1024 * 1024
     
     # Frontend directory paths
