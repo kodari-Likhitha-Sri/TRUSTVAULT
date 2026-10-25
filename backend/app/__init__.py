@@ -158,7 +158,10 @@ def create_app(config_class=Config):
         app.config['AVATAR_FOLDER']
     ]
     for directory in upload_dirs:
-        os.makedirs(directory, exist_ok=True)
+        try:
+            os.makedirs(directory, exist_ok=True)
+        except OSError:
+            pass
 
     # Register modular blueprints
     from app.auth.routes import auth_bp

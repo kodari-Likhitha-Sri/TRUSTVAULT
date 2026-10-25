@@ -12,9 +12,12 @@ if db_url:
     elif db_url.startswith('postgresql://'):
         db_url = db_url.replace('postgresql://', 'postgresql+psycopg2://', 1)
 
+is_vercel = bool(os.environ.get('VERCEL'))
+default_sqlite = "sqlite:////tmp/trustvault.db" if is_vercel else f"sqlite:///{os.path.join(BACKEND_DIR, 'trustvault.db')}"
+
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'trustvault-super-secure-key-2026-xyz-987'
-    SQLALCHEMY_DATABASE_URI = db_url or f"sqlite:///{os.path.join(BACKEND_DIR, 'trustvault.db')}"
+    SQLALCHEMY_DATABASE_URI = db_url or default_sqlite
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # 20 MB max file size
@@ -25,8 +28,8 @@ class Config:
     TEMPLATES_FOLDER = os.path.join(FRONTEND_DIR, 'templates')
     STATIC_FOLDER = os.path.join(FRONTEND_DIR, 'static')
     
-    UPLOAD_FOLDER = os.path.join(STATIC_FOLDER, 'uploads')
-    AVATAR_FOLDER = os.path.join(STATIC_FOLDER, 'images', 'avatars')
+    UPLOAD_FOLDER = '/tmp/uploads' if is_vercel else os.path.join(STATIC_FOLDER, 'uploads')
+    AVATAR_FOLDER = '/tmp/avatars' if is_vercel else os.path.join(STATIC_FOLDER, 'images', 'avatars')
     
     ALLOWED_EXTENSIONS = {'pdf', 'docx', 'doc', 'ppt', 'pptx', 'png', 'jpg', 'jpeg'}
     
